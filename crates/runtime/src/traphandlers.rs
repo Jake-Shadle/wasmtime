@@ -61,19 +61,23 @@ cfg_if::cfg_if! {
             };
 
             // Allow handling OOB with signals on all architectures
+            eprintln!("WASMTIME REGISTERING SIGSEV!");
             register(&mut PREV_SIGSEGV, libc::SIGSEGV);
 
             // Handle `unreachable` instructions which execute `ud2` right now
+            eprintln!("WASMTIME REGISTERING SIGILL!");
             register(&mut PREV_SIGILL, libc::SIGILL);
 
             // x86 uses SIGFPE to report division by zero
             if cfg!(target_arch = "x86") || cfg!(target_arch = "x86_64") {
+                eprintln!("WASMTIME REGISTERING SIGFPE!");
                 register(&mut PREV_SIGFPE, libc::SIGFPE);
             }
 
             // On ARM, handle Unaligned Accesses.
             // On Darwin, guard page accesses are raised as SIGBUS.
             if cfg!(target_arch = "arm") || cfg!(target_os = "macos") || cfg!(target_os = "freebsd") {
+                eprintln!("WASMTIME REGISTERING SIGBUS!");
                 register(&mut PREV_SIGBUS, libc::SIGBUS);
             }
         }
