@@ -83,6 +83,7 @@ cfg_if::cfg_if! {
             siginfo: *mut libc::siginfo_t,
             context: *mut libc::c_void,
         ) {
+            eprintln!("WASMTIME GOT SIGNAL {}", signum);
             let previous = match signum {
                 libc::SIGSEGV => &PREV_SIGSEGV,
                 libc::SIGBUS => &PREV_SIGBUS,
@@ -95,7 +96,10 @@ cfg_if::cfg_if! {
                 // trap.
                 let info = match info {
                     Some(info) => info,
-                    None => return false,
+                    None => {
+                        eprintln!("WASMTIME IS _NOT_ EXECUTING WASM CODE!");
+                        return false;
+                    },
                 };
 
                 // If we hit an exception while handling a previous trap, that's
@@ -126,6 +130,8 @@ cfg_if::cfg_if! {
             if handled {
                 return;
             }
+
+            eprintln!("SIGNAL WAS _NOT_ HANDLED!!!!");
 
             // This signal is not for any compiled wasm code we expect, so we
             // need to forward the signal to the next handler. If there is no
@@ -592,12 +598,14 @@ impl<'a> CallThreadState<'a> {
         // Otherwise flag ourselves as handling a trap, do the trap handling,
         // and reset our trap handling flag.
         if self.handling_trap.replace(true) {
+            eprintln!("WASMTIME WAS ALREADY HANDLING TRAP!");
             return ptr::null();
         }
         let _reset = ResetCell(&self.handling_trap, false);
 
         // If we haven't even started to handle traps yet, bail out.
         if self.jmp_buf.get().is_null() {
+            eprintln!("WASMTIME HAS NOT REGISTERED JUMP!");
             return ptr::null();
         }
 
@@ -612,6 +620,7 @@ impl<'a> CallThreadState<'a> {
 
         // If this fault wasn't in wasm code, then it's not our problem
         if !(self.is_wasm_code)(pc as usize) {
+            eprintln!("WASMTIME TRAP NOT IN WASM CODE!");
             return ptr::null();
         }
 
