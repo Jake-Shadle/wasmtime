@@ -58,6 +58,10 @@ cfg_if::cfg_if! {
                         io::Error::last_os_error(),
                     );
                 }
+
+                if !slot.as_mut_ptr().is_null() {
+                    eprintln!("PREVIOUS SIGNAL HANDLER {:?} REGISTERED FOR {}", slot.as_mut_ptr(), signal);
+                }
             };
 
             // Allow handling OOB with signals on all architectures
